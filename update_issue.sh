@@ -14,8 +14,7 @@ OS_Version=$(hostnamectl | grep "Operating System" | awk -F' ' '{print $6,$7,$8}
 IP=$(ip addr show | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | cut -d/ -f1 | xargs)
 
 # Tạo thông điệp để ghi vào /etc/issue
-ISSUE_MESSAGE="
-**************************************************
+ISSUE_MESSAGE="**************************************************
 *   Welcome to the Red Hat Enterprise Linux $OS_Version!   *
 *   Unauthorized access is prohibited.           *
 *   Contact IT support if you need assistance.   *
@@ -38,7 +37,27 @@ EOF
 # Đảm bảo script có thể chạy được
 chmod +x /usr/local/bin/update_issue.sh
 
-# Bước 2: Thêm cron job để chạy script mỗi khi hệ thống khởi động lại
-(crontab -l ; echo "@reboot /usr/local/bin/update_issue.sh") | crontab -
+# Bước 2: Tạo service trong systemd
+cat << 'EOF' > /etc/systemd/system/update_issue.service
+[Unit]
+Description=Update /etc/issue with system information
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/update_issue.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Tải lại systemd để nhận diện service mới
+systemctl daemon-reload
+
+# Kích hoạt service để chạy mỗi khi hệ thống khởi động
+systemctl enable update_issue.service
+
+# Khởi động service để kiểm tra
+systemctl start update_issue.service
 
 echo "Setup complete. The update_issue script will run at startup."
