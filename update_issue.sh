@@ -11,14 +11,14 @@ Hostname=$(hostnamectl | grep "Static hostname" | awk -F: '{print $2}' | xargs)
 OS_Version=$(hostnamectl | grep "Operating System" | awk -F' ' '{print $6,$7,$8}' | xargs)
 
 # Lấy địa chỉ IP
-IP=$(ip addr show | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | cut -d/ -f1 | xargs)
+IP=$(hostname -I | xargs)
 
 # Tạo thông điệp để ghi vào /etc/issue
-ISSUE_MESSAGE="**************************************************
+ISSUE_MESSAGE="******************************************************
 *   Welcome to the Red Hat Enterprise Linux $OS_Version!   *
-*   Unauthorized access is prohibited.           *
-*   Contact IT support if you need assistance.   *
-**************************************************
+*   Unauthorized access is prohibited.               *
+*   Contact IT support if you need assistance.       *
+******************************************************
 
 Operating System: $OS
 Kernel: $Kernel
@@ -59,5 +59,8 @@ systemctl enable update_issue.service
 
 # Khởi động service để kiểm tra
 systemctl start update_issue.service
+
+# Bước 3: Thêm cron job để chạy script mỗi khi hệ thống khởi động lại
+(crontab -l ; echo "@reboot /usr/local/bin/update_issue.sh") | crontab -
 
 echo "Setup complete. The update_issue script will run at startup."
