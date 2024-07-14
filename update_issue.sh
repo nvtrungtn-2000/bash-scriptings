@@ -13,6 +13,9 @@ OS_Version=$(hostnamectl | grep "Operating System" | awk -F' ' '{print $6,$7,$8}
 # Lấy địa chỉ IP
 IP=$(hostname -I | xargs)
 
+# Ghi log để kiểm tra
+echo "IP Address fetched: $IP" >> /var/log/update_issue.log
+
 # Tạo thông điệp để ghi vào /etc/issue
 ISSUE_MESSAGE="******************************************************
 *   Welcome to the Red Hat Enterprise Linux $OS_Version!   *
@@ -30,8 +33,8 @@ IP Address: $IP
 echo "$ISSUE_MESSAGE" | sudo tee /etc/issue > /dev/null
 
 # Hiển thị thông điệp đã ghi để xác nhận
-echo "The following information has been written to /etc/issue:"
-echo "$ISSUE_MESSAGE"
+echo "The following information has been written to /etc/issue:" >> /var/log/update_issue.log
+echo "$ISSUE_MESSAGE" >> /var/log/update_issue.log
 EOF
 
 # Đảm bảo script có thể chạy được
