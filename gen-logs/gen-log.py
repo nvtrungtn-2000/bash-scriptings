@@ -3,16 +3,32 @@ import random
 import time
 import json
 from datetime import datetime
+import logging
+import socket
 
+# Configuration constants
 DIR_PATH_KAFKA = "/usr/local/kafka/bin/kafka-console-producer.sh"
 TOPIC = "advanced-node-01"
-IP_PORT_KAFKA = subprocess.getoutput("hostname -I").split()[0] + ":9092"
+KAFKA_PORT = 9092
 
 server_list = ["192.168.100.10", "192.168.100.11", "192.168.100.12"]
 uri_list = ["/advanced-node-01/api/post-users", "/advanced-node-01/api/get-users"]
 method_list = ["GET", "POST"]
 bank_list = ["VIETTINBANK", "VIETCOMBANK", "BIDV", "SHINHAN BANK", "MOMO"]
 user_list = ["0866988154", "0866988155"]
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def get_ip():
+    try:
+        ip = socket.gethostbyname(socket.gethostname())
+        return ip
+    except socket.error as e:
+        logging.error("Unable to get IP address: %s", e)
+        raise
+
+IP_PORT_KAFKA = f"{get_ip()}:{KAFKA_PORT}"
 
 def send_message():
     datetime_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -23,6 +39,7 @@ def send_message():
     user = random.choice(user_list)
     process_time = random.randint(0, 999)
     request_id = random.randint(0, 9999)
+    
     message = {
         "timestamp": datetime_str,
         "server": server,
@@ -42,17 +59,21 @@ def send_message():
     }
     json_message = json.dumps(message)
     command = [DIR_PATH_KAFKA, "--topic", TOPIC, "--bootstrap-server", IP_PORT_KAFKA]
-    process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate(input=json_message.encode())
-    if process.returncode != 0:
-        print("Error sending message to Kafka. Exiting...")
-        print(stderr.decode())
+    
+    try:
+        process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate(input=json_message.encode())
+        if process.returncode != 0:
+            logging.error("Error sending message to Kafka: %s", stderr.decode())
+            return False
+        return True
+    except Exception as e:
+        logging.error("Exception occurred while sending message: %s", e)
         return False
-    return True
 
 def main():
     if not subprocess.call(["test", "-x", DIR_PATH_KAFKA]) == 0:
-        print(f'Kafka producer script not found or not executable at {DIR_PATH_KAFKA}. Exiting...')
+        logging.error('Kafka producer script not found or not executable at %s. Exiting...', DIR_PATH_KAFKA)
         exit(1)
 
     try:
@@ -61,7 +82,9 @@ def main():
                 exit(1)
             time.sleep(1)
     except KeyboardInterrupt:
-        print("Interrupted by user.")
+        logging.info("Interrupted by user.")
+    except Exception as e:
+        logging.error("An unexpected error occurred: %s", e)
 
 if __name__ == "__main__":
     main()
