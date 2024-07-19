@@ -4,37 +4,59 @@
 cat << 'EOF' > /usr/local/bin/update_issue.sh
 #!/bin/bash
 
-# Lấy thông tin từ lệnh hostnamectl
-OS=$(hostnamectl | grep "Operating System" | awk -F: '{print $2}' | xargs)
-Kernel=$(hostnamectl | grep "Kernel" | awk -F: '{print $2}' | xargs)
-Hostname=$(hostnamectl | grep "Static hostname" | awk -F: '{print $2}' | xargs)
-OS_Version=$(hostnamectl | grep "Operating System" | awk -F' ' '{print $6,$7,$8}' | xargs)
+# Function to fetch system information
+fetch_system_info() {
+    local info os kernel hostname ip os_version arch uptime
+    info=$(hostnamectl)
 
-# Lấy địa chỉ IP
-IP=$(hostname -I | xargs)
+    os=$(echo "$info" | grep -i "Operating System" | awk -F: '{print $2}' | xargs)
+    kernel=$(echo "$info" | grep -i "Kernel" | awk -F: '{print $2}' | xargs)
+    hostname=$(echo "$info" | grep -i "Static hostname" | awk -F: '{print $2}' | xargs)
+    ip=$(hostname -I | xargs)
+    arch=$(uname -m)
+    uptime=$(uptime -p)
+    os_version=$(echo "$os" | awk '{print $NF}')
 
-# Ghi log để kiểm tra
-echo "IP Address fetched: $IP" >> /var/log/update_issue.log
+    printf "%s\n%s\n%s\n%s\n%s\n%s\n%s\n" "$os" "$kernel" "$hostname" "$ip" "$os_version" "$arch" "$uptime"
+}
 
-# Tạo thông điệp để ghi vào /etc/issue
-ISSUE_MESSAGE="******************************************************
-*   Welcome to the Red Hat Enterprise Linux $OS_Version!   *
-*   Unauthorized access is prohibited.               *
-*   Contact IT support if you need assistance.       *
+# Fetch and sanitize system information
+system_info=$(fetch_system_info)
+os=$(echo "$system_info" | sed -n '1p')
+kernel=$(echo "$system_info" | sed -n '2p')
+hostname=$(echo "$system_info" | sed -n '3p')
+ip=$(echo "$system_info" | sed -n '4p')
+os_version=$(echo "$system_info" | sed -n '5p')
+arch=$(echo "$system_info" | sed -n '6p')
+uptime=$(echo "$system_info" | sed -n '7p')
+
+# Formatted message for /etc/issue
+issue_message=$(cat <<EOF
 ******************************************************
+*        Welcome to $os $os_version!                 *
+******************************************************
+*  Operating System:   $os                           *
+*  Kernel:             $kernel                       *
+*  Static hostname:    $hostname                     *
+*  IP Address:         $ip                           *
+*  Architecture:       $arch                         *
+*  Uptime:             $uptime                       *
+******************************************************
+*        Nguyễn Văn Trung - trungnv6@vnpay.vn        *
+******************************************************
+EOF
+)
 
-Operating System: $OS
-Kernel: $Kernel
-Static hostname: $Hostname
-IP Address: $IP
-"
-
-# Ghi thông điệp vào /etc/issue
-echo "$ISSUE_MESSAGE" | sudo tee /etc/issue > /dev/null
-
-# Hiển thị thông điệp đã ghi để xác nhận
-echo "The following information has been written to /etc/issue:" >> /var/log/update_issue.log
-echo "$ISSUE_MESSAGE" >> /var/log/update_issue.log
+# Write message to /etc/issue
+if echo "$issue_message" | sudo tee /etc/issue > /dev/null; then
+    # Log the written message for confirmation
+    {
+        printf "The following information has been written to /etc/issue:\n"
+        printf "%s\n" "$issue_message"
+    } >> /var/log/update_issue.log
+else
+    echo "Failed to write to /etc/issue" >> /var/log/update_issue.log
+fi
 EOF
 
 # Đảm bảo script có thể chạy được
@@ -49,6 +71,8 @@ After=network.target
 [Service]
 Type=oneshot
 ExecStart=/usr/local/bin/update_issue.sh
+User=nobody
+Group=nogroup
 
 [Install]
 WantedBy=multi-user.target
@@ -62,8 +86,5 @@ systemctl enable update_issue.service
 
 # Khởi động service để kiểm tra
 systemctl start update_issue.service
-
-# Bước 3: Thêm cron job để chạy script mỗi khi hệ thống khởi động lại
-(crontab -l ; echo "@reboot /usr/local/bin/update_issue.sh") | crontab -
 
 echo "Setup complete. The update_issue script will run at startup."
