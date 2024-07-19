@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 # Bước 1: Tạo script cập nhật thông tin hệ thống
 cat << 'EOF' > /usr/local/bin/update_issue.sh
@@ -42,14 +42,7 @@ issue_message=$(cat << EOM
 *  Architecture:       $arch                         *
 *  Uptime:             $uptime                       *
 ******************************************************
-*  Contact: Nguyễn Văn Trung - trungnv6@vnpay.vn     *
-*  Position: System Administrator                    *
-******************************************************
-*  System Status                                      *
-*  -------------                                      *
-*  CPU Usage:                                         *
-*  Memory Usage:                                      *
-*  Disk Usage:                                        *
+*    Nguyễn Văn Trung - nvtrung16122000@gmail.com    *
 ******************************************************
 EOM
 )
@@ -78,8 +71,6 @@ After=network.target
 [Service]
 Type=oneshot
 ExecStart=/usr/local/bin/update_issue.sh
-User=nobody
-Group=nogroup
 
 [Install]
 WantedBy=multi-user.target
