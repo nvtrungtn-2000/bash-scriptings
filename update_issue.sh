@@ -33,7 +33,7 @@ uptime=$(echo "$system_info" | sed -n '7p')
 # Formatted message for /etc/issue
 issue_message=$(cat << EOM
 ******************************************************
-*        Welcome to $os $os_version!                 *
+*  Welcome to $os $os_version!                       *
 ******************************************************
 *  Operating System:   $os                           *
 *  Kernel:             $kernel                       *
