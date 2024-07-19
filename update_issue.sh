@@ -15,8 +15,7 @@ fetch_system_info() {
     ip=$(hostname -I | xargs)
     arch=$(uname -m)
     uptime=$(uptime -p)
-    os_version=$(echo "$os" | awk '{print $NF}')
-
+    
     printf "%s\n%s\n%s\n%s\n%s\n%s\n%s\n" "$os" "$kernel" "$hostname" "$ip" "$os_version" "$arch" "$uptime"
 }
 
@@ -32,18 +31,16 @@ uptime=$(echo "$system_info" | sed -n '7p')
 
 # Formatted message for /etc/issue
 issue_message=$(cat << EOM
-******************************************************
-*  Welcome to $os $os_version!                       *
-******************************************************
-*  Operating System:   $os                           *
-*  Kernel:             $kernel                       *
-*  Static hostname:    $hostname                     *
-*  IP Address:         $ip                           *
-*  Architecture:       $arch                         *
-*  Uptime:             $uptime                       *
-******************************************************
-*    Nguyễn Văn Trung - nvtrung16122000@gmail.com    *
-******************************************************
+Welcome to $os!
+
+Operating System:   $os
+Kernel:             $kernel
+Static hostname:    $hostname
+IP Address:         $ip
+Architecture:       $arch
+Uptime:             $uptime
+
+Nguyễn Văn Trung - nvtrung16122000@gmail.com
 EOM
 )
 
