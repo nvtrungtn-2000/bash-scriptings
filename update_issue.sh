@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 # Bước 1: Tạo script cập nhật thông tin hệ thống
 cat << 'EOF' > /usr/local/bin/update_issue.sh
@@ -31,7 +31,7 @@ arch=$(echo "$system_info" | sed -n '6p')
 uptime=$(echo "$system_info" | sed -n '7p')
 
 # Formatted message for /etc/issue
-issue_message=$(cat <<EOF
+issue_message=$(cat << EOM
 ******************************************************
 *        Welcome to $os $os_version!                 *
 ******************************************************
@@ -42,9 +42,16 @@ issue_message=$(cat <<EOF
 *  Architecture:       $arch                         *
 *  Uptime:             $uptime                       *
 ******************************************************
-*        Nguyễn Văn Trung - trungnv6@vnpay.vn        *
+*  Contact: Nguyễn Văn Trung - trungnv6@vnpay.vn     *
+*  Position: System Administrator                    *
 ******************************************************
-EOF
+*  System Status                                      *
+*  -------------                                      *
+*  CPU Usage:                                         *
+*  Memory Usage:                                      *
+*  Disk Usage:                                        *
+******************************************************
+EOM
 )
 
 # Write message to /etc/issue
