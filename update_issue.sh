@@ -34,13 +34,12 @@ issue_message=$(cat << EOM
 Welcome to $os!
 
 Operating System:   $os
-Kernel:             $kernel
-Static hostname:    $hostname
-IP Address:         $ip
-Architecture:       $arch
-Uptime:             $uptime
+Kernel          :   $kernel
+Hostname        :   $hostname
+IP Address      :   $ip
+Architecture    :   $arch
 
-Nguyễn Văn Trung - nvtrung16122000@gmail.com
+Feedbacker - nvtrung16122000@gmail.com
 EOM
 )
 
