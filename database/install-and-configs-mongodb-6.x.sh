@@ -25,7 +25,7 @@ detect_os() {
 }
 
 add_mongo_repo_centos() {
-    cat <<EOF | sudo tee /etc/yum.repos.d/mongodb-org-6.0.repo > /dev/null
+    cat <<EOF > /etc/yum.repos.d/mongodb-org-6.0.repo
 [mongodb-org-6.0]
 name=MongoDB Repository
 baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/6.0/x86_64/
@@ -33,25 +33,30 @@ gpgcheck=1
 enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/server-6.0.asc
 EOF
-    sudo yum install -y epel-release
+    yum install -y epel-release
 }
 
 add_mongo_repo_ubuntu() {
-    wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
-    echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu $(lsb_release -cs)/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
-    sudo apt-get update -y
+    wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | apt-key add -
+    if command -v lsb_release &> /dev/null; then
+        echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu $(lsb_release -cs)/mongodb-org/6.0 multiverse" > /etc/apt/sources.list.d/mongodb-org-6.0.list
+    else
+        echo "lsb_release command not found. Ensure you are running this script on an Ubuntu system."
+        exit 1
+    fi
+    apt-get update -y
 }
 
 install_mongo_centos() {
-    sudo yum install -y mongodb-org
+    yum install -y mongodb-org
 }
 
 install_mongo_ubuntu() {
-    sudo apt-get install -y mongodb-org
+    apt-get install -y mongodb-org
 }
 
 configure_mongo() {
-    sudo tee "${MONGO_CONF_FILE}" > /dev/null <<EOF
+    cat <<EOF > "${MONGO_CONF_FILE}"
 # mongod.conf
 
 # Where to store data.
@@ -71,24 +76,24 @@ net:
   port: ${MONGO_PORT}
   bindIp: 0.0.0.0
 EOF
-    sudo mkdir -p "${MONGO_LOG_DIR}" "${MONGO_DATA_DIR}"
-    sudo chown -R mongod:mongod "${MONGO_LOG_DIR}" "${MONGO_DATA_DIR}"
+    mkdir -p "${MONGO_LOG_DIR}" "${MONGO_DATA_DIR}"
+    chown -R mongod:mongod "${MONGO_LOG_DIR}" "${MONGO_DATA_DIR}"
 }
 
 start_enable_mongo() {
-    sudo systemctl start mongod
-    sudo systemctl enable mongod
+    systemctl start mongod
+    systemctl enable mongod
 }
 
 restart_check_mongo() {
-    sudo systemctl restart mongod
-    sudo systemctl status mongod --no-pager
+    systemctl restart mongod
+    systemctl status mongod --no-pager
 }
 
 configure_firewall() {
     if command -v firewall-cmd &> /dev/null; then
-        sudo firewall-cmd --add-port=${MONGO_PORT}/tcp --zone=public --permanent
-        sudo firewall-cmd --reload
+        firewall-cmd --add-port=${MONGO_PORT}/tcp --zone=public --permanent
+        firewall-cmd --reload
     fi
 }
 
