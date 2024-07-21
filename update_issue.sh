@@ -33,11 +33,12 @@ uptime=$(echo "$system_info" | sed -n '7p')
 issue_message=$(cat << EOM
 Welcome to $os!
 
-Operating System:   $os
-Kernel          :   $kernel
-Hostname        :   $hostname
-IP Address      :   $ip
-Architecture    :   $arch
+Operating System: $os
+Kernel          : $kernel
+Hostname        : $hostname
+IP Address      : $ip
+Architecture    : $arch
+Uptime          : $uptime
 
 Feedbacker - nvtrung16122000@gmail.com
 EOM
