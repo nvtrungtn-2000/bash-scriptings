@@ -51,33 +51,32 @@ if [[ -z "$CPU_COUNT" || "$CPU_COUNT" -eq 0 ]]; then
     exit $UNKNOWN
 fi
 
-# Get load averages
-if ! read -r load1 load5 load15 _ < /proc/loadavg; then
+# Get load averages and process info
+if ! read -r load1 load5 load15 running_processes total_processes < <(awk '{print $1, $2, $3, $4}' /proc/loadavg); then
     echo "UNKNOWN - Unable to read /proc/loadavg"
     exit $UNKNOWN
 fi
 
+# Extract running processes and total processes
+IFS='/' read -r running_processes total_processes <<< "$running_processes"
+
 # Calculate load percentages
-load1_percent=$(awk -v load="$load1" -v cpus="$CPU_COUNT" 'BEGIN {printf "%.2f", (load/cpus)*100}')
-load5_percent=$(awk -v load="$load5" -v cpus="$CPU_COUNT" 'BEGIN {printf "%.2f", (load/cpus)*100}')
-load15_percent=$(awk -v load="$load15" -v cpus="$CPU_COUNT" 'BEGIN {printf "%.2f", (load/cpus)*100}')
+load1_percent=$(awk -v load1_val="$load1" -v cpus="$CPU_COUNT" 'BEGIN {printf "%.2f", (load1_val/cpus)*100}')
+load5_percent=$(awk -v load5_val="$load5" -v cpus="$CPU_COUNT" 'BEGIN {printf "%.2f", (load5_val/cpus)*100}')
+load15_percent=$(awk -v load15_val="$load15" -v cpus="$CPU_COUNT" 'BEGIN {printf "%.2f", (load15_val/cpus)*100}')
 
 # Prepare performance data
-perfdata="load1=$load1;$WARNING_THRESHOLD_LOAD1;$CRITICAL_THRESHOLD_LOAD1;0;100 load5=$load5;$WARNING_THRESHOLD_LOAD5;$CRITICAL_THRESHOLD_LOAD5;0;100 load15=$load15;$WARNING_THRESHOLD_LOAD15;$CRITICAL_THRESHOLD_LOAD15;0;100"
+perfdata="load1=$load1;$WARNING_THRESHOLD_LOAD1;$CRITICAL_THRESHOLD_LOAD1;0;100 load5=$load5;$WARNING_THRESHOLD_LOAD5;$CRITICAL_THRESHOLD_LOAD5;0;100 load15=$load15;$WARNING_THRESHOLD_LOAD15;$CRITICAL_THRESHOLD_LOAD15;0;100 running_processes=$running_processes total_processes=$total_processes"
 
 # Check thresholds and set status text
-if (( $(echo "$load1_percent >= $CRITICAL_THRESHOLD_LOAD1" | bc -l) )) || \
-   (( $(echo "$load5_percent >= $CRITICAL_THRESHOLD_LOAD5" | bc -l) )) || \
-   (( $(echo "$load15_percent >= $CRITICAL_THRESHOLD_LOAD15" | bc -l) )); then
-    STATUS_TEXT="CRITICAL - Load average: $load1, $load5, $load15"
+if (( $(echo "$load1_percent >= $CRITICAL_THRESHOLD_LOAD1" | bc -l) )) || (( $(echo "$load5_percent >= $CRITICAL_THRESHOLD_LOAD5" | bc -l) )) || (( $(echo "$load15_percent >= $CRITICAL_THRESHOLD_LOAD15" | bc -l) )); then
+    STATUS_TEXT="CRITICAL - Load average: $load1, $load5, $load15 [$running_processes/$total_processes]"
     STATUS=$CRITICAL
-elif (( $(echo "$load1_percent >= $WARNING_THRESHOLD_LOAD1" | bc -l) )) || \
-     (( $(echo "$load5_percent >= $WARNING_THRESHOLD_LOAD5" | bc -l) )) || \
-     (( $(echo "$load15_percent >= $WARNING_THRESHOLD_LOAD15" | bc -l) )); then
-    STATUS_TEXT="WARNING - Load average: $load1, $load5, $load15"
+elif (( $(echo "$load1_percent >= $WARNING_THRESHOLD_LOAD1" | bc -l) )) || (( $(echo "$load5_percent >= $WARNING_THRESHOLD_LOAD5" | bc -l) )) || (( $(echo "$load15_percent >= $WARNING_THRESHOLD_LOAD15" | bc -l) )); then
+    STATUS_TEXT="WARNING - Load average: $load1, $load5, $load15 [$running_processes/$total_processes]"
     STATUS=$WARNING
 else
-    STATUS_TEXT="OK - Load average: $load1, $load5, $load15"
+    STATUS_TEXT="OK - Load average: $load1, $load5, $load15 [$running_processes/$total_processes]"
     STATUS=$OK
 fi
 
